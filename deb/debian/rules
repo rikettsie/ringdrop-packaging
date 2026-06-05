@@ -1,0 +1,17 @@
+#!/usr/bin/make -f
+
+%:
+	dh $@
+
+override_dh_auto_build:
+	cargo build --release --locked
+
+override_dh_auto_install:
+	install -Dpm 0755 target/release/rdrop \
+		debian/ringdrop/usr/bin/rdrop
+
+override_dh_auto_test:
+	# skip upstream tests during package build
+
+override_dh_auto_clean:
+	cargo clean

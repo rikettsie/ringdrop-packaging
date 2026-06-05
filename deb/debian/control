@@ -1,0 +1,21 @@
+Source: ringdrop
+Section: net
+Priority: optional
+Maintainer: Enrico Fusto <enrico.fusto@protonmail.com>
+Build-Depends: debhelper-compat (= 13), cargo, rustc
+Standards-Version: 4.6.2
+Homepage: https://github.com/rikettsie/ringdrop
+Vcs-Git: https://github.com/rikettsie/ringdrop-packaging.git
+Vcs-Browser: https://github.com/rikettsie/ringdrop-packaging
+Rules-Requires-Root: no
+
+Package: ringdrop
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Secure, frugal P2P streamed file transfer with ring-based access control
+ Ringdrop is a P2P file transfer tool built on iroh-blobs and bao protocols.
+ Files are associated with rings (groups of peers); only ring members can
+ download them. Transfers resume automatically if interrupted — no verified
+ data is re-transferred after a crash or disconnect.
+ .
+ The crate is named ringdrop but the installed binary is rdrop.
