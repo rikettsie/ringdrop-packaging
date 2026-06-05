@@ -1,7 +1,7 @@
 name: Package release
 
 on:
-  # Triggered by the ringdrop repo on release publish (see ringdrop/.github/workflows/notify-packaging.yml).
+  # Triggered by the ringdrop repo on release publish (see ringdrop/.github/workflows/release.yml).
   repository_dispatch:
     types: [ringdrop-release]
   # Manual trigger for testing or re-running a specific version.
@@ -19,13 +19,12 @@ jobs:
       image: fedora:latest
     permissions:
       contents: write
+    env:
+      VERSION: ${{ github.event.client_payload.version || inputs.version }}
 
     steps:
       - name: Checkout ringdrop-packaging
         uses: actions/checkout@v4
-
-      - name: Set VERSION
-        run: echo "VERSION=${{ github.event.client_payload.version || inputs.version }}" >> $GITHUB_ENV
 
       - name: Checkout ringdrop at v${{ env.VERSION }}
         uses: actions/checkout@v4
@@ -35,7 +34,9 @@ jobs:
           path: ringdrop
 
       - name: Install dependencies
-        run: dnf install -y git rust cargo make python3
+        run: |
+          dnf install -y git rust cargo make python3
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
       - name: Generate RPM vendor tarball
         run: |
@@ -63,6 +64,8 @@ jobs:
     needs: rpm
     permissions:
       contents: write
+    env:
+      VERSION: ${{ github.event.client_payload.version || inputs.version }}
 
     steps:
       # Pull after the rpm job so we start from its commit.
@@ -70,9 +73,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: main
-
-      - name: Set VERSION
-        run: echo "VERSION=${{ github.event.client_payload.version || inputs.version }}" >> $GITHUB_ENV
 
       - name: Checkout ringdrop at v${{ env.VERSION }}
         uses: actions/checkout@v4
