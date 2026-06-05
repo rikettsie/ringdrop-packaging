@@ -1,4 +1,4 @@
-VERSION  ?= $(error VERSION is required — e.g. make release VERSION=0.13.0)
+VERSION  ?= $(error VERSION is required — e.g. make rpm-release VERSION=0.13.0)
 RELEASE  := 1
 NAME     := ringdrop
 SPECFILE := rpm/$(NAME).spec
@@ -9,16 +9,31 @@ RINGDROP := ../ringdrop
 MAINTAINER := Enrico Fusto <enrico.fusto@protonmail.com>
 RPM_DATE   := $(shell date "+%a %b %d %Y")
 
-.PHONY: vendor deb-vendor rpm-bump deb-bump release publish clean help
+.PHONY: rpm-release deb-release vendor deb-vendor rpm-bump deb-bump clean help
 
 help:
-	@echo "Targets:"
-	@echo "  make release    VERSION=x.y.z  full release (vendor + spec + deb)"
-	@echo "  make vendor     VERSION=x.y.z  RPM vendor tarball only"
-	@echo "  make deb-vendor VERSION=x.y.z  DEB orig tarball (fat, with vendor)"
-	@echo "  make rpm-bump   VERSION=x.y.z  bump RPM spec only"
-	@echo "  make deb-bump   VERSION=x.y.z  bump Debian changelog only"
-	@echo "  make clean                     remove generated tarballs"
+	@echo "Run on Fedora:"
+	@echo "  make rpm-release VERSION=x.y.z  RPM vendor + spec bump + commit/push + clean"
+	@echo ""
+	@echo "Run on Ubuntu:"
+	@echo "  make deb-release VERSION=x.y.z  DEB vendor + changelog bump + commit/push + clean"
+	@echo ""
+	@echo "Individual targets:"
+	@echo "  make vendor     VERSION=x.y.z   RPM vendor tarball only"
+	@echo "  make deb-vendor VERSION=x.y.z   DEB orig tarball (source + vendor)"
+	@echo "  make rpm-bump   VERSION=x.y.z   bump RPM spec only"
+	@echo "  make deb-bump   VERSION=x.y.z   bump Debian changelog only"
+	@echo "  make clean                      remove generated tarballs"
+
+## Run on Fedora: vendor + bump spec + commit/push + clean.
+rpm-release: vendor rpm-bump
+	git add -A && git commit -m "chore(rpm): bump to $(VERSION)" && git push
+	$(MAKE) clean
+
+## Run on Ubuntu: deb-vendor + bump changelog + commit/push + clean.
+deb-release: deb-vendor deb-bump
+	git add -A && git commit -m "chore(deb): bump to $(VERSION)" && git push
+	$(MAKE) clean
 
 ## Check out v$(VERSION), generate RPM vendor tarball, return to main.
 vendor:
@@ -27,7 +42,7 @@ vendor:
 	    mv $(NAME)-$(VERSION)-vendor.tar.gz $(CURDIR)/; \
 	    git checkout main
 
-## Check out v$(VERSION), generate fat DEB orig tarball (source + vendor), return to main.
+## Check out v$(VERSION), generate DEB orig tarball (source + vendor), return to main.
 deb-vendor:
 	cd $(RINGDROP) && git fetch --tags && git checkout v$(VERSION)
 	cd $(RINGDROP) && bash $(CURDIR)/deb/deb-vendor.sh; \
@@ -49,14 +64,6 @@ rpm-bump:
 deb-bump:
 	cd deb && DEBEMAIL="$(MAINTAINER)" dch -v $(VERSION)-$(RELEASE) \
 	    "Update to $(VERSION)"
-
-## Full release: generate both vendor tarballs and bump both changelogs.
-release: vendor deb-vendor rpm-bump deb-bump
-
-## release + commit + push + clean up tarballs.
-publish: release
-	git add -A && git commit -m "chore: bump to $(VERSION)" && git push
-	$(MAKE) clean
 
 ## Remove generated tarballs.
 clean:
