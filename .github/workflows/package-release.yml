@@ -1,0 +1,108 @@
+name: Package release
+
+on:
+  # Triggered by the ringdrop repo on release publish (see ringdrop/.github/workflows/notify-packaging.yml).
+  repository_dispatch:
+    types: [ringdrop-release]
+  # Manual trigger for testing or re-running a specific version.
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version without v prefix (e.g. 0.13.0)'
+        required: true
+
+jobs:
+  rpm:
+    name: RPM (Fedora)
+    runs-on: ubuntu-latest
+    container:
+      image: fedora:latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout ringdrop-packaging
+        uses: actions/checkout@v4
+
+      - name: Set VERSION
+        run: echo "VERSION=${{ github.event.client_payload.version || inputs.version }}" >> $GITHUB_ENV
+
+      - name: Checkout ringdrop at v${{ env.VERSION }}
+        uses: actions/checkout@v4
+        with:
+          repository: rikettsie/ringdrop
+          ref: v${{ env.VERSION }}
+          path: ringdrop
+
+      - name: Install dependencies
+        run: dnf install -y git rust cargo make python3
+
+      - name: Generate RPM vendor tarball
+        run: |
+          cd ringdrop
+          bash ../rpm/vendor.sh
+          mv ringdrop-${{ env.VERSION }}-vendor.tar.gz ../
+
+      - name: Bump RPM spec
+        run: make rpm-bump VERSION=${{ env.VERSION }}
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "chore(rpm): bump to ${{ env.VERSION }}"
+          git push
+
+      - name: Clean
+        run: rm -f *.tar.gz
+
+  deb:
+    name: DEB (Ubuntu)
+    runs-on: ubuntu-latest
+    needs: rpm
+    permissions:
+      contents: write
+
+    steps:
+      # Pull after the rpm job so we start from its commit.
+      - name: Checkout ringdrop-packaging
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set VERSION
+        run: echo "VERSION=${{ github.event.client_payload.version || inputs.version }}" >> $GITHUB_ENV
+
+      - name: Checkout ringdrop at v${{ env.VERSION }}
+        uses: actions/checkout@v4
+        with:
+          repository: rikettsie/ringdrop
+          ref: v${{ env.VERSION }}
+          path: ringdrop
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install devscripts
+        run: sudo apt-get install -y devscripts
+
+      - name: Generate DEB orig tarball
+        run: |
+          cd ringdrop
+          bash ../deb/deb-vendor.sh
+          mv ringdrop_${{ env.VERSION }}.orig.tar.gz ../
+
+      - name: Bump Debian changelog
+        run: make deb-bump VERSION=${{ env.VERSION }}
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "chore(deb): bump to ${{ env.VERSION }}"
+          git push
+
+      - name: Clean
+        run: rm -f *.tar.gz
