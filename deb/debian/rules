@@ -7,6 +7,7 @@ override_dh_auto_configure:
 	mkdir -p .cargo
 	printf '[source.crates-io]\nreplace-with = "vendored-sources"\n\n[source.vendored-sources]\ndirectory = "vendor"\n' \
 	    > .cargo/config.toml
+	python3 debian/fix-vendor-checksums.py
 
 override_dh_auto_build:
 	cargo build --release --locked --offline
