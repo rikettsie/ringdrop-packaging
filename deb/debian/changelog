@@ -1,6 +1,7 @@
-ringdrop (0.12.0-1) UNRELEASED; urgency=medium
+ringdrop (0.13.1-1) UNRELEASED; urgency=medium
 
   * Initial release
   * Update to 0.12.0
+  * Update to 0.13.1
 
- -- Enrico Fusto <enrico.fusto@protonmail.com>  Fri, 05 Jun 2026 14:06:55 +0200
+ -- Enrico Fusto <enrico.fusto@protonmail.com>  Fri, 05 Jun 2026 17:28:49 +0000
