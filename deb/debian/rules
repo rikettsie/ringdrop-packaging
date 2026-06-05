@@ -3,8 +3,13 @@
 %:
 	dh $@
 
+override_dh_auto_configure:
+	mkdir -p .cargo
+	printf '[source.crates-io]\nreplace-with = "vendored-sources"\n\n[source.vendored-sources]\ndirectory = "vendor"\n' \
+	    > .cargo/config.toml
+
 override_dh_auto_build:
-	cargo build --release --locked
+	cargo build --release --locked --offline
 
 override_dh_auto_install:
 	install -Dpm 0755 target/release/rdrop \
