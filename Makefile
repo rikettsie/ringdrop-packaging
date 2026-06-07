@@ -1,5 +1,5 @@
 VERSION  ?= $(error VERSION is required — e.g. make rpm-release VERSION=0.13.0)
-RELEASE  := 1
+RELEASE  := 2
 NAME     := ringdrop
 SPECFILE := rpm/$(NAME).spec
 

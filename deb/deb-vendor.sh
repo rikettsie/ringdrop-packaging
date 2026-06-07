@@ -51,6 +51,13 @@ EOF
 
 TARBALL="ringdrop_${VERSION}.orig.tar.gz"
 echo "Creating ${TARBALL}..."
-tar czf "$TARBALL" -C "$WORKDIR" "ringdrop-$VERSION"
+# Pin timestamps to the HEAD commit so the tarball is reproducible across runs.
+SOURCE_DATE_EPOCH=$(git log -1 --format=%ct HEAD)
+find "$WORKDIR" -exec touch -d "@${SOURCE_DATE_EPOCH}" {} +
+tar czf "$TARBALL" \
+    --sort=name \
+    --mtime="@${SOURCE_DATE_EPOCH}" \
+    --owner=0 --group=0 --numeric-owner \
+    -C "$WORKDIR" "ringdrop-$VERSION"
 
 echo "Created ${TARBALL}"
