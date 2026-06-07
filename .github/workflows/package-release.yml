@@ -198,7 +198,7 @@ jobs:
           name: deb-orig-tarball
 
       - name: Install dependencies
-        run: sudo apt-get install -y devscripts dput gnupg2
+        run: sudo apt-get install -y devscripts dput gnupg2 debhelper
 
       - name: Import GPG key
         env:
