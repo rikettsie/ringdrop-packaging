@@ -1,3 +1,9 @@
+ringdrop (0.14.0-1) noble; urgency=medium
+
+  * Update to 0.14.0
+
+ -- Enrico Fusto <enrico.fusto@protonmail.com>  Sun, 07 Jun 2026 19:25:53 +0000
+
 ringdrop (0.13.1-1) noble; urgency=medium
 
   * Update to 0.13.1
