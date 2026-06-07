@@ -54,6 +54,60 @@ jobs:
       - name: Clean
         run: rm -f *.tar.gz
 
+  copr:
+    name: COPR
+    runs-on: ubuntu-latest
+    needs: rpm
+    permissions:
+      contents: read
+    env:
+      VERSION: ${{ github.event.client_payload.version || inputs.version }}
+
+    steps:
+      - name: Checkout ringdrop-packaging
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Install build tools
+        run: sudo apt-get install -y rpm python3-pip
+
+      - name: Install copr-cli
+        run: pip3 install copr-cli
+
+      - name: Configure copr-cli
+        env:
+          COPR_LOGIN: ${{ secrets.COPR_LOGIN }}
+          COPR_USERNAME: ${{ secrets.COPR_USERNAME }}
+          COPR_API_TOKEN: ${{ secrets.COPR_API_TOKEN }}
+        run: |
+          mkdir -p ~/.config
+          cat > ~/.config/copr <<EOF
+          [copr-cli]
+          login = ${COPR_LOGIN}
+          username = ${COPR_USERNAME}
+          token = ${COPR_API_TOKEN}
+          copr_url = https://copr.fedorainfracloud.org
+          EOF
+
+      - name: Download source tarball
+        run: |
+          curl -fsSL \
+            "https://github.com/rikettsie/ringdrop/archive/v${VERSION}/ringdrop-${VERSION}.tar.gz" \
+            -o "ringdrop-${VERSION}.tar.gz"
+
+      - name: Build SRPM
+        run: |
+          rpmbuild \
+            --define "_sourcedir $PWD" \
+            --define "_srcrpmdir $PWD" \
+            -bs rpm/ringdrop.spec
+
+      - name: Submit to COPR
+        env:
+          COPR_USERNAME: ${{ secrets.COPR_USERNAME }}
+        run: copr-cli build --nowait "${COPR_USERNAME}/ringdrop" ringdrop-*.src.rpm
+
   deb:
     name: DEB
     runs-on: ubuntu-latest
@@ -102,3 +156,50 @@ jobs:
 
       - name: Clean
         run: rm -f *.tar.gz
+
+  launchpad:
+    name: Launchpad
+    runs-on: ubuntu-latest
+    needs: deb
+    permissions:
+      contents: read
+    env:
+      VERSION: ${{ github.event.client_payload.version || inputs.version }}
+      GPG_KEY_ID: ABAAA206A0302542C8FAEC1C4B0154A7348EFDDE
+
+    steps:
+      - name: Checkout ringdrop-packaging
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Install dependencies
+        run: sudo apt-get install -y devscripts dput gnupg2
+
+      - name: Import GPG key
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: |
+          mkdir -p ~/.gnupg && chmod 700 ~/.gnupg
+          printf 'allow-loopback-pinentry\nallow-preset-passphrase\n' \
+            > ~/.gnupg/gpg-agent.conf
+          echo 'pinentry-mode loopback' > ~/.gnupg/gpg.conf
+          gpgconf --kill gpg-agent
+          echo "$GPG_PRIVATE_KEY" | base64 -d | \
+            gpg --batch --pinentry-mode loopback \
+                --passphrase "${GPG_PASSPHRASE:-}" --import
+          KEYGRIP=$(gpg --with-colons --with-keygrip -K "$GPG_KEY_ID" \
+            | awk -F: '/^grp/{print $10; exit}')
+          /usr/lib/gnupg2/gpg-preset-passphrase --preset "$KEYGRIP" \
+            <<< "${GPG_PASSPHRASE:-}"
+
+      - name: Build source package
+        run: |
+          tar xzf "ringdrop_${VERSION}.orig.tar.gz"
+          cp -r deb/debian "ringdrop-${VERSION}/"
+          cd "ringdrop-${VERSION}"
+          dpkg-buildpackage -S -sa -k"${GPG_KEY_ID}"
+
+      - name: Upload to Launchpad
+        run: dput ppa:rikettsie/ringdrop "ringdrop_${VERSION}-1_source.changes"
