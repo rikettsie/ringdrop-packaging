@@ -2,7 +2,7 @@
 %global version_string 0.12.0
 
 Name:           %{crate}
-Version:        0.13.1
+Version:        0.14.0
 Release:        1%{?dist}
 Summary:        Secure, frugal P2P streamed file transfer with ring-based access control
 
@@ -41,6 +41,9 @@ install -Dpm 0755 target/release/rdrop %{buildroot}%{_bindir}/rdrop
 %{_bindir}/rdrop
 
 %changelog
+* Sun Jun 07 2026 Enrico Fusto <enrico.fusto@protonmail.com> - 0.14.0-1
+- Update to 0.14.0
+
 * Sun Jun 07 2026 Enrico Fusto <enrico.fusto@protonmail.com> - 0.13.1-3
 - Update to 0.13.1
 
