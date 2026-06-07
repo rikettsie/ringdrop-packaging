@@ -51,14 +51,14 @@ EOF
 
 TARBALL="ringdrop_${VERSION}.orig.tar.gz"
 echo "Creating ${TARBALL}..."
-# Export SOURCE_DATE_EPOCH so both tar and gzip use it — without export, gzip
-# stamps the current time in its header, making the tarball non-reproducible.
-export SOURCE_DATE_EPOCH=$(git log -1 --format=%ct HEAD)
+SOURCE_DATE_EPOCH=$(git log -1 --format=%ct HEAD)
 find "$WORKDIR" -exec touch -d "@${SOURCE_DATE_EPOCH}" {} +
-tar czf "$TARBALL" \
+# Pipe through `gzip -n` to suppress filename/mtime from the gzip header —
+# tar's internal gzip may ignore SOURCE_DATE_EPOCH, making the output non-reproducible.
+tar cf - \
     --sort=name \
     --mtime="@${SOURCE_DATE_EPOCH}" \
     --owner=0 --group=0 --numeric-owner \
-    -C "$WORKDIR" "ringdrop-$VERSION"
+    -C "$WORKDIR" "ringdrop-$VERSION" | gzip -n > "$TARBALL"
 
 echo "Created ${TARBALL}"
