@@ -223,7 +223,7 @@ jobs:
           tar xzf "ringdrop_${VERSION}.orig.tar.gz"
           cp -r deb/debian "ringdrop-${VERSION}/"
           cd "ringdrop-${VERSION}"
-          dpkg-buildpackage -S -sa -k"${GPG_KEY_ID}"
+          dpkg-buildpackage -S -sa -d -k"${GPG_KEY_ID}"
 
       - name: Upload to Launchpad
         run: dput ppa:rikettsie/ringdrop "ringdrop_${VERSION}-1_source.changes"
