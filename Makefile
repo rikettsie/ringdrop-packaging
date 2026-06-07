@@ -49,21 +49,29 @@ deb-vendor:
 	    mv $(NAME)_$(VERSION).orig.tar.gz $(CURDIR)/; \
 	    git checkout main
 
-## Update Version: in the spec and prepend a %changelog entry.
+## Update Version: in the spec and prepend a %changelog entry. No-op if version already present.
 rpm-bump:
 	sed -i 's/^Version:.*$$/Version:        $(VERSION)/' $(SPECFILE)
-	awk '/^%changelog/{                                          \
-	    print;                                                   \
-	    print "* $(RPM_DATE) $(MAINTAINER) - $(VERSION)-$(RELEASE)"; \
-	    print "- Update to $(VERSION)";                          \
-	    print "";                                                \
-	    next                                                     \
-	}1' $(SPECFILE) > $(SPECFILE).tmp && mv $(SPECFILE).tmp $(SPECFILE)
+	@if grep -q "^\\* .* - $(VERSION)-$(RELEASE)$$" $(SPECFILE); then \
+	    echo "$(VERSION)-$(RELEASE) already in spec changelog, skipping"; \
+	else \
+	    awk '/^%changelog/{                                          \
+	        print;                                                   \
+	        print "* $(RPM_DATE) $(MAINTAINER) - $(VERSION)-$(RELEASE)"; \
+	        print "- Update to $(VERSION)";                          \
+	        print "";                                                \
+	        next                                                     \
+	    }1' $(SPECFILE) > $(SPECFILE).tmp && mv $(SPECFILE).tmp $(SPECFILE); \
+	fi
 
-## Prepend an entry to the Debian changelog (requires devscripts).
+## Prepend an entry to the Debian changelog (requires devscripts). No-op if version already present.
 deb-bump:
-	cd deb && DEBEMAIL="$(MAINTAINER)" dch --distribution noble -v $(VERSION)-$(RELEASE) \
-	    "Update to $(VERSION)"
+	@cd deb && if grep -q "^ringdrop ($(VERSION)-$(RELEASE))" debian/changelog; then \
+	    echo "$(VERSION)-$(RELEASE) already in changelog, skipping"; \
+	else \
+	    DEBEMAIL="$(MAINTAINER)" dch --distribution noble -v $(VERSION)-$(RELEASE) \
+	        "Update to $(VERSION)"; \
+	fi
 
 ## Remove generated tarballs.
 clean:
