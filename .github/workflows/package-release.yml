@@ -206,24 +206,34 @@ jobs:
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
         run: |
           mkdir -p ~/.gnupg && chmod 700 ~/.gnupg
-          printf 'allow-loopback-pinentry\nallow-preset-passphrase\n' \
-            > ~/.gnupg/gpg-agent.conf
           echo 'pinentry-mode loopback' > ~/.gnupg/gpg.conf
+          echo 'allow-loopback-pinentry' > ~/.gnupg/gpg-agent.conf
           gpgconf --kill gpg-agent
           echo "$GPG_PRIVATE_KEY" | base64 -d | \
             gpg --batch --pinentry-mode loopback \
                 --passphrase "${GPG_PASSPHRASE:-}" --import
-          KEYGRIP=$(gpg --with-colons --with-keygrip -K "$GPG_KEY_ID" \
-            | awk -F: '/^grp/{print $10; exit}')
-          /usr/lib/gnupg2/gpg-preset-passphrase --preset "$KEYGRIP" \
-            <<< "${GPG_PASSPHRASE:-}"
 
       - name: Build source package
         run: |
           tar xzf "ringdrop_${VERSION}.orig.tar.gz"
           cp -r deb/debian "ringdrop-${VERSION}/"
           cd "ringdrop-${VERSION}"
-          dpkg-buildpackage -S -sa -d -k"${GPG_KEY_ID}"
+          dpkg-buildpackage -S -sa -d -us -uc
+
+      - name: Sign source package
+        env:
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: |
+          GPG_WRAPPER=$(mktemp /tmp/gpg-ci.XXXXXX)
+          cat > "$GPG_WRAPPER" << 'WRAPPER'
+          #!/bin/bash
+          exec gpg --batch --no-tty --pinentry-mode loopback \
+              --passphrase "${GPG_PASSPHRASE:-}" "$@"
+          WRAPPER
+          chmod +x "$GPG_WRAPPER"
+          debsign -p "$GPG_WRAPPER" -k"${GPG_KEY_ID}" \
+              "ringdrop_${VERSION}-1_source.changes"
+          rm -f "$GPG_WRAPPER"
 
       - name: Upload to Launchpad
         run: dput ppa:rikettsie/ringdrop "ringdrop_${VERSION}-1_source.changes"
