@@ -190,6 +190,7 @@ jobs:
       contents: read
     env:
       VERSION: ${{ github.event.client_payload.version || inputs.version }}
+      RELEASE: ${{ github.event.client_payload.release || inputs.release || '1' }}
       GPG_KEY_ID: ABAAA206A0302542C8FAEC1C4B0154A7348EFDDE
 
     steps:
@@ -238,8 +239,8 @@ jobs:
           WRAPPER
           chmod +x "$GPG_WRAPPER"
           debsign -p "$GPG_WRAPPER" -k"${GPG_KEY_ID}" \
-              "ringdrop_${VERSION}-1_source.changes"
+              "ringdrop_${VERSION}-${RELEASE}_source.changes"
           rm -f "$GPG_WRAPPER"
 
       - name: Upload to Launchpad
-        run: dput ppa:rikettsie/ringdrop "ringdrop_${VERSION}-1_source.changes"
+        run: dput ppa:rikettsie/ringdrop "ringdrop_${VERSION}-${RELEASE}_source.changes"
