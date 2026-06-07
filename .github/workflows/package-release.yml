@@ -225,7 +225,7 @@ jobs:
           tar xzf "ringdrop_${VERSION}.orig.tar.gz"
           cp -r deb/debian "ringdrop-${VERSION}/"
           cd "ringdrop-${VERSION}"
-          dpkg-buildpackage -S -sa -d -us -uc
+          dpkg-buildpackage -S -d -us -uc
 
       - name: Sign source package
         env:
