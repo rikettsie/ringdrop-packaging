@@ -41,6 +41,9 @@ install -Dpm 0755 target/release/rdrop %{buildroot}%{_bindir}/rdrop
 %{_bindir}/rdrop
 
 %changelog
+* Sun Jun 07 2026 Enrico Fusto <enrico.fusto@protonmail.com> - 0.13.1-3
+- Update to 0.13.1
+
 * Sun Jun 07 2026 Enrico Fusto <enrico.fusto@protonmail.com> - 0.13.1-2
 - Update to 0.13.1
 
