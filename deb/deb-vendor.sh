@@ -36,6 +36,10 @@ $VENDOR_EXISTED || cargo vendor
 echo "Exporting source tree for ringdrop v${VERSION}..."
 git archive --prefix="ringdrop-$VERSION/" HEAD | tar x -C "$WORKDIR"
 
+# Ubuntu Noble ships cargo 1.75 which cannot parse Cargo.lock v4 (requires 1.78+).
+# Downgrade to v3 — v4 only adds workspace metadata unused by single-crate builds.
+sed -i 's/^version = 4$/version = 3/' "$SRCDIR/Cargo.lock"
+
 echo "Copying vendor directory..."
 cp -r vendor "$SRCDIR/"
 
