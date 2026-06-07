@@ -10,6 +10,10 @@ on:
       version:
         description: 'Version without v prefix (e.g. 0.13.0)'
         required: true
+      release:
+        description: 'Debian/RPM release number (default: 1, bump if re-packaging same upstream version)'
+        required: false
+        default: '1'
 
 jobs:
   rpm:
@@ -19,6 +23,7 @@ jobs:
       contents: write
     env:
       VERSION: ${{ github.event.client_payload.version || inputs.version }}
+      RELEASE: ${{ github.event.client_payload.release || inputs.release || '1' }}
 
     steps:
       - name: Checkout ringdrop-packaging
@@ -41,7 +46,7 @@ jobs:
           mv ringdrop-${{ env.VERSION }}-vendor.tar.gz ../
 
       - name: Bump RPM spec
-        run: make rpm-bump VERSION=${{ env.VERSION }}
+        run: make rpm-bump VERSION=${{ env.VERSION }} RELEASE=${{ env.RELEASE }}
 
       - name: Commit and push
         run: |
@@ -128,6 +133,7 @@ jobs:
       contents: write
     env:
       VERSION: ${{ github.event.client_payload.version || inputs.version }}
+      RELEASE: ${{ github.event.client_payload.release || inputs.release || '1' }}
 
     steps:
       # Pull after the rpm job so we start from its commit.
@@ -156,7 +162,7 @@ jobs:
           mv ringdrop_${{ env.VERSION }}.orig.tar.gz ../
 
       - name: Bump Debian changelog
-        run: make deb-bump VERSION=${{ env.VERSION }}
+        run: make deb-bump VERSION=${{ env.VERSION }} RELEASE=${{ env.RELEASE }}
 
       - name: Commit and push
         run: |
