@@ -51,8 +51,9 @@ EOF
 
 TARBALL="ringdrop_${VERSION}.orig.tar.gz"
 echo "Creating ${TARBALL}..."
-# Pin timestamps to the HEAD commit so the tarball is reproducible across runs.
-SOURCE_DATE_EPOCH=$(git log -1 --format=%ct HEAD)
+# Export SOURCE_DATE_EPOCH so both tar and gzip use it — without export, gzip
+# stamps the current time in its header, making the tarball non-reproducible.
+export SOURCE_DATE_EPOCH=$(git log -1 --format=%ct HEAD)
 find "$WORKDIR" -exec touch -d "@${SOURCE_DATE_EPOCH}" {} +
 tar czf "$TARBALL" \
     --sort=name \
