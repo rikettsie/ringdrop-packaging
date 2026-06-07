@@ -62,7 +62,7 @@ rpm-bump:
 
 ## Prepend an entry to the Debian changelog (requires devscripts).
 deb-bump:
-	cd deb && DEBEMAIL="$(MAINTAINER)" dch -v $(VERSION)-$(RELEASE) \
+	cd deb && DEBEMAIL="$(MAINTAINER)" dch --distribution noble -v $(VERSION)-$(RELEASE) \
 	    "Update to $(VERSION)"
 
 ## Remove generated tarballs.
