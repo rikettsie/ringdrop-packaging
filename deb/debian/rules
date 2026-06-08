@@ -1,15 +1,19 @@
 #!/usr/bin/make -f
 
-# Noble ships cargo 1.75 / rustc 1.75; the dependency tree requires >= 1.89.
-# Install the latest stable toolchain via rustup at configure time.
-CARGO := $(HOME)/.cargo/bin/cargo
+# Launchpad's sbuild sets HOME=/sbuild-nonexistent (non-writable).
+# Pin CARGO_HOME and RUSTUP_HOME to /tmp so rustup and cargo land somewhere real.
+export CARGO_HOME := /tmp/cargo-home
+export RUSTUP_HOME := /tmp/rustup-home
+CARGO := $(CARGO_HOME)/bin/cargo
 
 %:
 	dh $@
 
 override_dh_auto_configure:
-	curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | \
-	    sh -s -- -y --profile minimal --no-modify-path
+	curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
+	    > /tmp/rustup-init.sh
+	sh /tmp/rustup-init.sh -y --profile minimal --no-modify-path
+	rm /tmp/rustup-init.sh
 	mkdir -p .cargo
 	printf '[source.crates-io]\nreplace-with = "vendored-sources"\n\n[source.vendored-sources]\ndirectory = "vendor"\n' \
 	    > .cargo/config.toml
