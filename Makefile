@@ -9,30 +9,20 @@ RINGDROP := ../ringdrop
 MAINTAINER := Enrico Fusto <enrico.fusto@protonmail.com>
 RPM_DATE   := $(shell date "+%a %b %d %Y")
 
-.PHONY: rpm-release deb-release vendor deb-vendor rpm-bump deb-bump clean help
+.PHONY: rpm-release vendor rpm-bump clean help
 
 help:
 	@echo "Run on Fedora:"
 	@echo "  make rpm-release VERSION=x.y.z  RPM vendor + spec bump + commit/push + clean"
 	@echo ""
-	@echo "Run on Ubuntu:"
-	@echo "  make deb-release VERSION=x.y.z  DEB vendor + changelog bump + commit/push + clean"
-	@echo ""
 	@echo "Individual targets:"
-	@echo "  make vendor     VERSION=x.y.z   RPM vendor tarball only"
-	@echo "  make deb-vendor VERSION=x.y.z   DEB orig tarball (source + vendor)"
-	@echo "  make rpm-bump   VERSION=x.y.z   bump RPM spec only"
-	@echo "  make deb-bump   VERSION=x.y.z   bump Debian changelog only"
-	@echo "  make clean                      remove generated tarballs"
+	@echo "  make vendor   VERSION=x.y.z   RPM vendor tarball only"
+	@echo "  make rpm-bump VERSION=x.y.z   bump RPM spec only"
+	@echo "  make clean                    remove generated tarballs"
 
 ## Run on Fedora: vendor + bump spec + commit/push + clean.
 rpm-release: vendor rpm-bump
 	git add -A && git commit -m "chore(rpm): bump to $(VERSION)" && git push
-	$(MAKE) clean
-
-## Run on Ubuntu: deb-vendor + bump changelog + commit/push + clean.
-deb-release: deb-vendor deb-bump
-	git add -A && git commit -m "chore(deb): bump to $(VERSION)" && git push
 	$(MAKE) clean
 
 ## Check out v$(VERSION), generate RPM vendor tarball, return to main.
@@ -40,13 +30,6 @@ vendor:
 	cd $(RINGDROP) && git fetch --tags && git checkout v$(VERSION)
 	cd $(RINGDROP) && bash $(CURDIR)/rpm/vendor.sh; \
 	    mv $(NAME)-$(VERSION)-vendor.tar.gz $(CURDIR)/; \
-	    git checkout main
-
-## Check out v$(VERSION), generate DEB orig tarball (source + vendor), return to main.
-deb-vendor:
-	cd $(RINGDROP) && git fetch --tags && git checkout v$(VERSION)
-	cd $(RINGDROP) && bash $(CURDIR)/deb/deb-vendor.sh; \
-	    mv $(NAME)_$(VERSION)+ds.orig.tar.gz $(CURDIR)/; \
 	    git checkout main
 
 ## Update Version: in the spec and prepend a %changelog entry. No-op if version already present.
@@ -62,15 +45,6 @@ rpm-bump:
 	        print "";                                                \
 	        next                                                     \
 	    }1' $(SPECFILE) > $(SPECFILE).tmp && mv $(SPECFILE).tmp $(SPECFILE); \
-	fi
-
-## Prepend an entry to the Debian changelog (requires devscripts). No-op if version already present.
-deb-bump:
-	@cd deb && if grep -qF "ringdrop ($(VERSION)+ds-$(RELEASE))" debian/changelog; then \
-	    echo "$(VERSION)+ds-$(RELEASE) already in changelog, skipping"; \
-	else \
-	    DEBEMAIL="$(MAINTAINER)" dch --distribution noble -v "$(VERSION)+ds-$(RELEASE)" \
-	        "Update to $(VERSION)"; \
 	fi
 
 ## Remove generated tarballs.
