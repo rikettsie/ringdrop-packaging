@@ -50,7 +50,7 @@ install -Dpm 0644 %{SOURCE2} \
 * Mon Jun 08 2026 Enrico Fusto <enrico.fusto@protonmail.com> - 0.14.1-1
 - Update to 0.14.1
 
-* Sun Jun 08 2026 Enrico Fusto <enrico.fusto@protonmail.com> - 0.14.0-1
+* Mon Jun 08 2026 Enrico Fusto <enrico.fusto@protonmail.com> - 0.14.0-1
 - Add AppStream metainfo and hicolor icon for software centers
 
 * Sun Jun 07 2026 Enrico Fusto <enrico.fusto@protonmail.com> - 0.14.0-1
