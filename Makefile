@@ -46,7 +46,7 @@ vendor:
 deb-vendor:
 	cd $(RINGDROP) && git fetch --tags && git checkout v$(VERSION)
 	cd $(RINGDROP) && bash $(CURDIR)/deb/deb-vendor.sh; \
-	    mv $(NAME)_$(VERSION).orig.tar.gz $(CURDIR)/; \
+	    mv $(NAME)_$(VERSION)+ds.orig.tar.gz $(CURDIR)/; \
 	    git checkout main
 
 ## Update Version: in the spec and prepend a %changelog entry. No-op if version already present.
@@ -66,10 +66,10 @@ rpm-bump:
 
 ## Prepend an entry to the Debian changelog (requires devscripts). No-op if version already present.
 deb-bump:
-	@cd deb && if grep -q "^ringdrop ($(VERSION)-$(RELEASE))" debian/changelog; then \
-	    echo "$(VERSION)-$(RELEASE) already in changelog, skipping"; \
+	@cd deb && if grep -qF "ringdrop ($(VERSION)+ds-$(RELEASE))" debian/changelog; then \
+	    echo "$(VERSION)+ds-$(RELEASE) already in changelog, skipping"; \
 	else \
-	    DEBEMAIL="$(MAINTAINER)" dch --distribution noble -v $(VERSION)-$(RELEASE) \
+	    DEBEMAIL="$(MAINTAINER)" dch --distribution noble -v "$(VERSION)+ds-$(RELEASE)" \
 	        "Update to $(VERSION)"; \
 	fi
 

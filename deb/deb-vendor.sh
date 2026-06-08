@@ -6,7 +6,7 @@
 #   cd /path/to/ringdrop
 #   bash /path/to/ringdrop-packaging/deb/deb-vendor.sh
 #
-# Output: ringdrop_<version>.orig.tar.gz in the current directory.
+# Output: ringdrop_<version>+ds.orig.tar.gz in the current directory.
 # The tarball includes the full source tree + vendor/ + .cargo/config.toml.
 
 set -euo pipefail
@@ -14,8 +14,11 @@ set -euo pipefail
 VERSION=$(cargo metadata --no-deps --format-version 1 \
     | python3 -c "import sys,json; print(json.load(sys.stdin)['packages'][0]['version'])")
 
+# +ds suffix marks that the tarball is modified from upstream (vendored deps bundled in).
+DEB_UPSTREAM="${VERSION}+ds"
+
 WORKDIR=$(mktemp -d)
-SRCDIR="$WORKDIR/ringdrop-$VERSION"
+SRCDIR="$WORKDIR/ringdrop-${DEB_UPSTREAM}"
 
 # Track whether vendor/ already existed so we don't delete user's work.
 VENDOR_EXISTED=false
@@ -34,7 +37,7 @@ echo "Vendoring dependencies..."
 $VENDOR_EXISTED || cargo vendor
 
 echo "Exporting source tree for ringdrop v${VERSION}..."
-git archive --prefix="ringdrop-$VERSION/" HEAD | tar x -C "$WORKDIR"
+git archive --prefix="ringdrop-${DEB_UPSTREAM}/" HEAD | tar x -C "$WORKDIR"
 
 # Ubuntu Noble ships cargo 1.75 which cannot parse Cargo.lock v4 (requires 1.78+).
 # Downgrade to v3 — v4 only adds workspace metadata unused by single-crate builds.
@@ -53,7 +56,7 @@ replace-with = "vendored-sources"
 directory = "vendor"
 EOF
 
-TARBALL="ringdrop_${VERSION}.orig.tar.gz"
+TARBALL="ringdrop_${DEB_UPSTREAM}.orig.tar.gz"
 echo "Creating ${TARBALL}..."
 SOURCE_DATE_EPOCH=$(git log -1 --format=%ct HEAD)
 find "$WORKDIR" -exec touch -d "@${SOURCE_DATE_EPOCH}" {} +
@@ -63,6 +66,6 @@ tar cf - \
     --sort=name \
     --mtime="@${SOURCE_DATE_EPOCH}" \
     --owner=0 --group=0 --numeric-owner \
-    -C "$WORKDIR" "ringdrop-$VERSION" | gzip -n > "$TARBALL"
+    -C "$WORKDIR" "ringdrop-${DEB_UPSTREAM}" | gzip -n > "$TARBALL"
 
 echo "Created ${TARBALL}"

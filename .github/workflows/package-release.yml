@@ -11,9 +11,13 @@ on:
         description: 'Version without v prefix (e.g. 0.13.0)'
         required: true
       release:
-        description: 'Debian/RPM release number (default: 1, bump if re-packaging same upstream version)'
+        description: 'RPM release number (default: 1)'
         required: false
         default: '1'
+      deb_release:
+        description: 'Debian revision for PPA (default: 1ppa1, bump to 1ppa2 etc. for re-packages)'
+        required: false
+        default: '1ppa1'
 
 jobs:
   rpm:
@@ -133,7 +137,7 @@ jobs:
       contents: write
     env:
       VERSION: ${{ github.event.client_payload.version || inputs.version }}
-      RELEASE: ${{ github.event.client_payload.release || inputs.release || '1' }}
+      RELEASE: ${{ github.event.client_payload.deb_release || inputs.deb_release || '1ppa1' }}
 
     steps:
       # Pull after the rpm job so we start from its commit.
@@ -159,7 +163,7 @@ jobs:
         run: |
           cd ringdrop
           bash ../deb/deb-vendor.sh
-          mv ringdrop_${{ env.VERSION }}.orig.tar.gz ../
+          mv ringdrop_${{ env.VERSION }}+ds.orig.tar.gz ../
 
       - name: Bump Debian changelog
         run: make deb-bump VERSION=${{ env.VERSION }} RELEASE=${{ env.RELEASE }}
@@ -176,7 +180,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: deb-orig-tarball
-          path: ringdrop_${{ env.VERSION }}.orig.tar.gz
+          path: ringdrop_${{ env.VERSION }}+ds.orig.tar.gz
           retention-days: 1
 
       - name: Clean
@@ -190,7 +194,7 @@ jobs:
       contents: read
     env:
       VERSION: ${{ github.event.client_payload.version || inputs.version }}
-      RELEASE: ${{ github.event.client_payload.release || inputs.release || '1' }}
+      RELEASE: ${{ github.event.client_payload.deb_release || inputs.deb_release || '1ppa1' }}
       GPG_KEY_ID: ABAAA206A0302542C8FAEC1C4B0154A7348EFDDE
 
     steps:
@@ -222,9 +226,9 @@ jobs:
 
       - name: Build source package
         run: |
-          tar xzf "ringdrop_${VERSION}.orig.tar.gz"
-          cp -r deb/debian "ringdrop-${VERSION}/"
-          cd "ringdrop-${VERSION}"
+          tar xzf "ringdrop_${VERSION}+ds.orig.tar.gz"
+          cp -r deb/debian "ringdrop-${VERSION}+ds/"
+          cd "ringdrop-${VERSION}+ds"
           dpkg-buildpackage -S -d -us -uc
 
       - name: Sign source package
@@ -239,8 +243,8 @@ jobs:
           WRAPPER
           chmod +x "$GPG_WRAPPER"
           debsign -p "$GPG_WRAPPER" -k"${GPG_KEY_ID}" \
-              "ringdrop_${VERSION}-${RELEASE}_source.changes"
+              "ringdrop_${VERSION}+ds-${RELEASE}_source.changes"
           rm -f "$GPG_WRAPPER"
 
       - name: Upload to Launchpad
-        run: dput ppa:rikettsie/ringdrop "ringdrop_${VERSION}-${RELEASE}_source.changes"
+        run: dput ppa:rikettsie/ringdrop "ringdrop_${VERSION}+ds-${RELEASE}_source.changes"
