@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="console-application">
+  <id>io.github.rikettsie.ringdrop</id>
+  <name>ringdrop</name>
+  <summary>Secure, frugal P2P streamed file transfer with ring-based access control</summary>
+  <description>
+    <p>
+      Ringdrop is a peer-to-peer file transfer tool built on iroh-blobs and bao
+      protocols. Files are associated with rings (groups of peers); only ring
+      members can download them. Transfers resume automatically if interrupted.
+    </p>
+  </description>
+  <url type="homepage">https://github.com/rikettsie/ringdrop</url>
+  <url type="bugtracker">https://github.com/rikettsie/ringdrop/issues</url>
+  <metadata_license>MIT</metadata_license>
+  <project_license>MIT</project_license>
+  <icon type="stock">ringdrop</icon>
+  <categories>
+    <category>Network</category>
+    <category>FileTransfer</category>
+  </categories>
+  <provides>
+    <binary>rdrop</binary>
+  </provides>
+  <releases>
+    <release version="0.14.0" date="2026-06-07"/>
+  </releases>
+</component>

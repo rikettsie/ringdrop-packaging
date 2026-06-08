@@ -32,9 +32,11 @@ vendor:
 	    mv $(NAME)-$(VERSION)-vendor.tar.gz $(CURDIR)/; \
 	    git checkout main
 
-## Update Version: in the spec and prepend a %changelog entry. No-op if version already present.
+## Update Version: in the spec, update metainfo <releases>, and prepend a %changelog entry.
+## No-op if version already present in changelog.
 rpm-bump:
 	sed -i 's/^Version:.*$$/Version:        $(VERSION)/' $(SPECFILE)
+	sed -i 's|<release version="[^"]*" date="[^"]*"/>|<release version="$(VERSION)" date="$(shell date +%Y-%m-%d)"/>|' assets/ringdrop.metainfo.xml
 	@if grep -q "^\\* .* - $(VERSION)-$(RELEASE)$$" $(SPECFILE); then \
 	    echo "$(VERSION)-$(RELEASE) already in spec changelog, skipping"; \
 	else \

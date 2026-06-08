@@ -115,6 +115,7 @@ jobs:
 
       - name: Build SRPM
         run: |
+          cp assets/ringdrop.metainfo.xml ./
           rpmbuild \
             --define "_sourcedir $PWD" \
             --define "_srcrpmdir $PWD" \
