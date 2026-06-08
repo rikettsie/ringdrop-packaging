@@ -43,6 +43,27 @@ git archive --prefix="ringdrop-${DEB_UPSTREAM}/" HEAD | tar x -C "$WORKDIR"
 # Downgrade to v3 — v4 only adds workspace metadata unused by single-crate builds.
 sed -i 's/^version = 4$/version = 3/' "$SRCDIR/Cargo.lock"
 
+# edition2024 was stabilised in cargo 1.85+; Noble ships 1.75.
+# Downgrade any vendored crate declaring it to edition 2021 (backward-compatible),
+# then update the Cargo.toml checksum in .cargo-checksum.json so --locked passes.
+echo "Patching edition2024 crates for Noble compatibility..."
+while IFS= read -r toml; do
+    sed -i 's/^edition = "2024"$/edition = "2021"/' "$toml"
+    checksum_file="$(dirname "$toml")/.cargo-checksum.json"
+    if [ -f "$checksum_file" ]; then
+        new_hash=$(sha256sum "$toml" | awk '{print $1}')
+        python3 - "$checksum_file" "$new_hash" << 'PYEOF'
+import json, sys
+path, new_hash = sys.argv[1], sys.argv[2]
+with open(path) as f:
+    data = json.load(f)
+data['files']['Cargo.toml'] = new_hash
+with open(path, 'w') as f:
+    json.dump(data, f, sort_keys=True)
+PYEOF
+    fi
+done < <(grep -rl '^edition = "2024"$' "$SRCDIR/vendor" --include='Cargo.toml' 2>/dev/null || true)
+
 echo "Copying vendor directory..."
 cp -r vendor "$SRCDIR/"
 
