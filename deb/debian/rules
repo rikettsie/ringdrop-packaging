@@ -1,9 +1,15 @@
 #!/usr/bin/make -f
 
+# Noble ships cargo 1.75 / rustc 1.75; the dependency tree requires >= 1.89.
+# Install the latest stable toolchain via rustup at configure time.
+CARGO := $(HOME)/.cargo/bin/cargo
+
 %:
 	dh $@
 
 override_dh_auto_configure:
+	curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | \
+	    sh -s -- -y --profile minimal --no-modify-path
 	mkdir -p .cargo
 	printf '[source.crates-io]\nreplace-with = "vendored-sources"\n\n[source.vendored-sources]\ndirectory = "vendor"\n' \
 	    > .cargo/config.toml
@@ -11,7 +17,7 @@ override_dh_auto_configure:
 	python3 debian/patch-edition2024.py
 
 override_dh_auto_build:
-	cargo build --release --locked --offline
+	$(CARGO) build --release --locked --offline
 
 override_dh_auto_install:
 	install -Dpm 0755 target/release/rdrop \
@@ -21,4 +27,4 @@ override_dh_auto_test:
 	# skip upstream tests during package build
 
 override_dh_auto_clean:
-	cargo clean
+	-$(CARGO) clean
