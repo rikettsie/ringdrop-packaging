@@ -1,7 +1,7 @@
 %global crate ringdrop
 
 Name:           %{crate}
-Version:        0.14.1
+Version:        0.15.0
 Release:        1%{?dist}
 Summary:        Secure, frugal P2P streamed file transfer with ring-based access control
 
@@ -47,6 +47,9 @@ install -Dpm 0644 %{SOURCE2} \
 %{_datadir}/metainfo/io.github.rikettsie.ringdrop.metainfo.xml
 
 %changelog
+* Sun Jun 14 2026 Enrico Fusto <enrico.fusto@protonmail.com> - 0.15.0-1
+- Update to 0.15.0
+
 * Mon Jun 08 2026 Enrico Fusto <enrico.fusto@protonmail.com> - 0.14.1-1
 - Update to 0.14.1
 
