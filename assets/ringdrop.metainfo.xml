@@ -23,6 +23,6 @@
     <binary>rdrop</binary>
   </provides>
   <releases>
-    <release version="0.15.0" date="2026-06-14"/>
+    <release version="0.16.0" date="2026-06-15"/>
   </releases>
 </component>
